@@ -1,6 +1,12 @@
 /**
  * Kamalasai Hospital 3D Smart Building Dashboard - Main Controller (v4)
  * 100% Calibrated to official blueprint floor.png and Google Earth maps2.png
+ * 
+ * ผู้พัฒนา (Developer): นายวิษณุ ศรีโยธา (wITsaNU _<)
+ * ตำแหน่ง (Position): นักวิชาการคอมพิวเตอร์
+ * กลุ่มงาน (Department): กลุ่มงานสุขภาพดิจิทัล
+ * หน่วยงาน (Organization): โรงพยาบาลกมลาไสย จังหวัดกาฬสินธุ์
+ * ต้นสังกัด: สำนักงานสาธารณสุขจังหวัดกาฬสินธุ์ เขตสุขภาพที่ 7 กระทรวงสาธารณสุข
  */
 
 const CAMPUS_ROT = -0.196; // -11.23°
