@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a439f">
+  <meta name="description"
+    content="Kamalasai Hospital 3D Smart Building Dashboard - ศูนย์ควบคุมและบริหารจัดการผังอาคารอัจฉริยะ โรงพยาบาลกมลาไสย จ.กาฬสินธุ์">
+  <title>โรงพยาบาลกมลาไสย - 3D Hospital</title>
+
+  <!-- Google Fonts: Sarabun & Prompt for clean modern Thai typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Three.js & OrbitControls from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- TWEEN for cinematic smooth camera transitions -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- 3D WebGL Canvas -->
+  <canvas id="world" aria-label="โมเดลผังอาคาร 3 มิติ โรงพยาบาลกมลาไสย ลากเพื่อหมุน ลากขวาเพื่อเลื่อน ล้อเมาส์เพื่อซูม"
+    tabindex="0"></canvas>
+
+  <!-- Dynamic SVG Leader Stalks connecting 3D world anchors to floating UI pins -->
+  <svg id="labelLeaders" class="label-leaders" aria-hidden="true"></svg>
+
+  <!-- 3D Floating Pin Labels Overlay Container -->
+  <div id="labelsContainer" class="labels-container" aria-hidden="true"></div>
+
+  <!-- Loading Screen -->
+  <div id="loading" class="loading">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <strong>โรงพยาบาลกมลาไสย</strong>
+      <p>Loading...</p>
+      <div class="loading-progress">
+        <div id="loadingBar" class="loading-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navigation Glassmorphism Bar -->
+  <header class="top glass">
+    <button class="brand" id="brandReset" type="button" aria-label="รีเฟรชกลับสู่ภาพรวมโรงพยาบาล">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <div>
+        <strong>โรงพยาบาลกมลาไสย</strong>
+        <small>Kamalasai Hospital</small>
+      </div>
+    </button>
+
+    <div class="search">
+      <input id="search" placeholder="" aria-label="ค้นหาอาคารหรือแผนก">
+    </div>
+
+    <div class="clock">
+      <span id="clock">08:30:00</span>
+      <small>กาฬสินธุ์ · UTC+7</small>
+    </div>
+
+    <button class="light-trigger" id="lightToggle" title="ปรับทิศทางแดดและความสว่าง" aria-label="ปรับแสง">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4L19 5" />
+      </svg>
+      <span>ปรับแสง</span>
+    </button>
+
+    <button class="light-trigger" id="fullscreenTop" title="โหมดเต็มจอ / ซ่อนแผงควบคุม (กดปุ่ม F หรือ H)"
+      aria-label="สลับโหมดเต็มจอ">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+      </svg>
+      <span id="fullscreenTopText">เต็มจอ</span>
+    </button>
+  </header>
+
+  <!-- Sun & Light Adjustment Floating Popover Panel -->
+  <section id="lightPanel" class="glass light-panel" hidden>
+    <div class="section-title">
+      <span>แสงแดดและบรรยากาศ</span>
+      <button id="closeLight" class="close-btn" aria-label="ปิดแผงแสง" title="ปิด (Esc)">×</button>
+    </div>
+    <p class="sub">ปรับเพื่อสำรวจเงาตกกระทบของแต่ละอาคาร</p>
+    <div class="light-presets">
+      <button type="button" data-light="morning">เช้า</button>
+      <button type="button" data-light="noon">กลางวัน</button>
+      <button type="button" data-light="evening">เย็น</button>
+      <button type="button" data-light="night">กลางคืน</button>
+    </div>
+    <label>
+      ทิศทางดวงอาทิตย์ (Azimuth)
+      <output id="sunAzValue">−40°</output>
+      <input id="sunAz" type="range" min="-180" max="180" value="-40">
+    </label>
+    <label>
+      มุมยกดวงอาทิตย์ (Elevation)
+      <output id="sunElValue">48°</output>
+      <input id="sunEl" type="range" min="10" max="85" value="48">
+    </label>
+    <label>
+      ความเข้มแสงแดด (Sun Power)
+      <output id="sunPowerValue">1.65</output>
+      <input id="sunPower" type="range" min="0.1" max="2.8" step="0.05" value="1.65">
+    </label>
+    <label>
+      แสงสะท้อนท้องฟ้า (Sky Fill)
+      <output id="ambientValue">0.45</output>
+      <input id="ambient" type="range" min="0.1" max="1.2" step="0.02" value="0.45">
+    </label>
+    <label>
+      ความสว่างภาพรวม (Exposure)
+      <output id="exposureValue">0.90</output>
+      <input id="exposure" type="range" min="0.5" max="1.4" step="0.01" value="0.90">
+    </label>
+    <button type="button" id="resetLight" class="action" style="margin-top: 8px;">คืนค่าแสงมาตรฐาน</button>
+  </section>
+
+  <!-- Search Results Dropdown -->
+  <div id="searchResults" class="glass" hidden></div>
+
+  <!-- Right Detail Panel (Hidden by default, opens only on building selection) -->
+  <aside id="detail" class="detail glass" hidden>
+    <div class="detail-head">
+      <span class="tag" id="entityType">ข้อมูลอาคาร</span>
+      <div>
+        <button id="closeDetail" class="close-btn" aria-label="ปิดแผงรายละเอียด" title="ปิด (Esc)">×</button>
+      </div>
+    </div>
+
+    <div class="detail-empty">
+      คลิกที่อาคารในโลก 3 มิติ หรือคลิกป้ายชื่อ<br>เพื่อดูรายละเอียดผังชั้นและสถิติการใช้งาน
+    </div>
+
+    <div class="detail-scroll">
+      <h2 id="entityTitle">อาคารผู้ป่วยนอก (OPD/ER)</h2>
+      <div class="sub" id="entitySub">อาคาร 2 ชั้น · โครงสร้าง คสล. ทรงโมเดิร์น</div>
+
+      <div class="badge-wrapper">
+        <span id="entityStatus" class="badge">เปิดให้บริการ 24 ชม.</span>
+      </div>
+
+      <!-- Mini Building Floor Diagram -->
+      <div class="mini-diagram" id="miniDiagram">
+        <div class="floor-block active" data-floor="2">
+          <span>ชั้น 2</span><small>คลินิกเฉพาะทาง, ทันตกรรม, ห้องประชุม</small>
+        </div>
+        <div class="floor-block" data-floor="1">
+          <span>ชั้น 1</span><small>อุบัติเหตุฉุกเฉิน (ER), เวชระเบียน, ห้องยา, การเงิน</small>
+        </div>
+      </div>
+
+      <div id="stats" class="stats">
+        <div>
+          <small>จำนวนชั้น</small>
+          <strong>2 ชั้น</strong>
+        </div>
+        <div>
+          <small>ผู้รับบริการเฉลี่ย</small>
+          <strong>450 คน/วัน</strong>
+        </div>
+        <div>
+          <small>การใช้พลังงาน</small>
+          <strong>48.2 kW</strong>
+        </div>
+        <div>
+          <small>สถานะความปลอดภัย</small>
+          <strong style="color: #2e7d32">ปกติ 100%</strong>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="bar-label">
+        <span id="loadLabel">ความหนาแน่นผู้รับบริการ</span>
+        <strong id="loadText">74%</strong>
+      </div>
+      <div class="bar">
+        <i id="loadBar" style="width: 74%"></i>
+      </div>
+
+      <div class="sub" id="detailNote">
+        มีทางลาดและหลังคา Drop-off รองรับรถพยาบาลฉุกเฉินด้านหน้า และเชื่อมต่อทางเดินกลางสู่ตึกผู้ป่วยใน
+      </div>
+
+      <div class="detail-footer">
+        <span id="dataUpdated">อัปเดตล่าสุด 08:30 น.</span><br>
+        ข้อมูลจำลองสำหรับวางผังแม่บทและบริหารอาคาร รพ.กมลาไสย
+      </div>
+    </div>
+
+    <div class="detail-controls">
+      <button id="follow" class="action">ดูอาคารนี้</button>
+      <div class="actions">
+        <button id="isolateFloor">ดูผังแยกชั้น</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Restore UI button (when UI is hidden) -->
+  <!-- restoreUi removed -->
+
+  <!-- Bottom Floating Toolbar -->
+  <nav class="toolbar glass" aria-label="ตัวควบคุมการนำทาง 3D">
+    <button id="collapseToolbar" aria-label="ยุบแถบควบคุม" aria-expanded="true" title="ยุบแถบควบคุม">‹</button>
+    <button id="reset" title="มุมมองภาพรวมทั้งโรงพยาบาล">ภาพรวม</button>
+    <button id="turntable" aria-pressed="false" title="หมุนชมโรงพยาบาล 360°">หมุน 360°</button>
+    <!-- <button id="toggleTable" title="เปิด/ปิด ตารางข้อมูลอาคารและหน่วยบริการ">ข้อมูลอาคาร</button> -->
+    <button id="toggleLabels" class="active" aria-pressed="true" title="เปิดหรือปิดป้ายชื่ออาคาร">ป้ายชื่ออาคาร</button>
+    <button id="toggleWalkways" class="active" aria-pressed="true"
+      title="แสดง/ซ่อนทางเดินเชื่อมอาคาร">ทางเชื่อม</button>
+    <button id="toggleUI" title="ซ่อน/แสดงหน้าต่างควบคุม (กดปุ่ม H)">เต็มจอ</button>
+  </nav>
+
+  <!-- Floating Navigation Hint -->
+  <!-- <div class="hint">คลิกซ้ายลากหมุนมุมมอง · คลิกขวาลากเลื่อนตำแหน่ง · ล้อเมาส์ซูม ·
+    คลิกที่อาคารหรือป้ายเพื่อดูรายละเอียด</div> -->
+
+  <!-- On-Demand Buildings & Departments Table Modal/Popover -->
+  <section id="tablePanel" class="glass popover-table" hidden>
+    <div class="popover-head">
+      <span>📋 ตารางข้อมูลอาคารและหน่วยงานบริการ</span>
+      <button id="closeTable" class="close-btn" aria-label="ปิดตาราง" title="ปิด (Esc)">×</button>
+    </div>
+    <div class="tabs">
+      <button class="active" data-tab="buildings">อาคารทั้งหมด <span>31</span></button>
+      <button data-tab="wards">หอผู้ป่วย & บริการ <span>27</span></button>
+      <button data-tab="infrastructure">สาธารณูปโภค & สิ่งแวดล้อม <span>12</span></button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Toast Notification Message -->
+  <div id="toast" class="toast" role="status"></div>
+
+  <!-- Real Satellite Map Modal -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="modalTitle">แผนที่อ้างอิง · โรงพยาบาลกมลาไสย</h2>
+        <button id="closeModal" class="icon" aria-label="ปิดหน้าต่าง">×</button>
+      </div>
+      <p class="sub">เปรียบเทียบผังแม่บททางการ (floor.png), ภาพถ่ายดาวเทียม 3D Google Earth (maps2.png) และภาพมุมสูง
+        (maps.png)</p>
+
+      <div class="modal-map-tabs" style="display: flex; gap: 8px; margin: 12px 0 8px; flex-wrap: wrap;">
+        <button id="btnModalFloor"
+          style="padding: 7px 16px; font-size: 12px; font-weight: 600; background: var(--accent); color: white; border-radius: 8px; transition: all 0.2s;">★
+          ผังแม่บททางการ รพ.กมลาไสย (floor.png)</button>
+        <button id="btnModalMap2"
+          style="padding: 7px 16px; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.06); border-radius: 8px; transition: all 0.2s;">ภาพถ่าย
+          3D Google Earth (maps2.png)</button>
+        <button id="btnModalMap1"
+          style="padding: 7px 16px; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.06); border-radius: 8px; transition: all 0.2s;">ภาพมุมสูง
+          Google Maps (maps.png)</button>
+      </div>
+
+      <div class="modal-img-container">
+        <img src="img/floor.png" alt="ผังแม่บททางการ โรงพยาบาลกมลาไสย" id="modalMapImg">
+      </div>
+      <div class="modal-footer"
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 11px; color: var(--muted)">ผังอาคาร 3 มิติถูกสร้างขึ้นจากตำแหน่งจริงของภาพถ่ายดาวเทียม
+          100%</span>
+        <div style="display: flex; gap: 12px;">
+          <a href="https://earth.google.com/web/search/%e0%b9%82%e0%b8%a3%e0%b8%87%e0%b8%9e%e0%b8%a2%e0%b8%b2%e0%b8%9a%e0%b8%b2%e0%b8%a5+%e0%b9%83%e0%b8%99+%e0%b8%81%e0%b8%a1%e0%b8%a5%e0%b8%b2%e0%b9%84%e0%b8%aa%e0%b8%a2+%e0%b8%ad%e0%b8%b3%e0%b9%80%e0%b8%a0%e0%b8%ad+%e0%b8%81%e0%b8%a1%e0%b8%a5%e0%b8%b2%e0%b9%84%e0%b8%aa%e0%b8%a2+%e0%b8%81%e0%b8%a1%e0%b8%a5%e0%b8%b2%e0%b9%84%e0%b8%aa%e0%b8%a2+%e0%b8%81%e0%b8%a1%e0%b8%a5%e0%b8%b2%e0%b9%84%e0%b8%aa%e0%b8%a2+%e0%b8%81%e0%b8%b2%e0%b8%ac%e0%b8%aa%e0%b8%b4%e0%b8%99%e0%b8%98%e0%b8%b8%e0%b9%8c/@16.33231383,103.56856464,143.17084816a,309.49620912d,35y,150.85043567h,49.49659681t,360r"
+            target="_blank" rel="noopener">เปิด Google Earth พิกัดจริง ↗</a>
+          <a href="https://maps.app.goo.gl/KCVaRCc6DYsBtvEP7" target="_blank" rel="noopener">เปิด Google Maps ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="img/mapTexture.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
