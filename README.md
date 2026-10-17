@@ -191,6 +191,79 @@ new TWEEN.Tween(camera.position)
 
 ---
 
+## 🤖 Master Prompt สำหรับสั่ง Agentic AI สร้าง Digital Twin (AI Prompt Guide)
+
+ในยุคปัจจุบัน ผู้พัฒนาส่วนใหญ่นิยมใช้ **Agentic AI** (เช่น Google Antigravity, Claude Code, Cursor, Windsurf, GitHub Copilot Workspace หรือ ChatGPT) ในการช่วยเขียนโค้ดและสร้างโปรเจกต์ขึ้นมาอย่างรวดเร็ว 
+
+คุณสามารถ **คัดลอก Master Prompt ด้านล่างนี้** ไปสั่งให้ AI สร้างโปรเจกต์ 3D Digital Twin ที่สมบูรณ์แบบตามแนวคิดและมาตรฐานสถาปัตยกรรมของโปรเจกต์นี้ได้ทันที *(หรือดูไฟล์แยกได้ที่ [plan/AI_DIGITALTWIN_PROMPT.md](plan/AI_DIGITALTWIN_PROMPT.md))*:
+
+<details open>
+<summary><b>📋 คลิกเพื่อดู Master Prompt แม่แบบ (Copy-Paste Ready Prompt)</b></summary>
+
+```markdown
+คุณคือ Senior Creative 3D WebGL Developer และ Software Architect ที่เชี่ยวชาญ Three.js, Vanilla JavaScript, และ Modern UI Design
+
+เป้าหมายของคุณคือการสร้างเว็บแอปพลิเคชัน "3D Smart Facility Digital Twin Dashboard" แบบ Interactive เสมือนจริง 100% บนเว็บเบราว์เซอร์ โดยจำลองผังอาคาร โครงสร้างสถาปัตยกรรม และระบบควบคุมอัจฉริยะ สำหรับ [ระบุชื่อสถานที่ เช่น โรงพยาบาล... / มหาวิทยาลัย... / โรงงาน...]
+
+โปรดพัฒนาโดยยึดหลักเกณฑ์และสถาปัตยกรรมเชิงเทคนิคมาตรฐานดังต่อไปนี้:
+
+1. ปรัชญาและข้อกำหนดด้านเทคนิค (Core Technical Constraints)
+- 100% Procedural Geometry: ห้ามใช้โมเดลไฟล์ 3D ภายนอก (.gltf, .fbx, .obj) เพื่อให้โหลดได้ทันทีแบบ Zero-lag น้ำหนักเบา และแสดงผลลื่นไหล 60 FPS บนทุกอุปกรณ์
+- Pure Web Standards: ใช้ HTML5, Vanilla CSS (Glassmorphism), และ Vanilla JavaScript (ES6+) ร่วมกับ Three.js (r128), OrbitControls, และ TWEEN.js ผ่าน CDN โดยไม่ต้องใช้ build tools หรือติดตั้ง npm dependencies
+- Aesthetic Style (Architectural Clay Diorama): สุนทรียศาสตร์แบบโมเดลสถาปัตยกรรมจำลอง สะอาดตา ผนังคอนกรีตคลีนโทนสว่างนวล หลังคาตัดสีเอกลักษณ์ประจำอาคาร กระจกสะท้อนเงาคมชัด และขอบอาคารมีมิติ
+
+2. ระบบพิกัดและการจัดผัง (3D Coordinate System)
+- กำหนดจุดกึ่งกลางของพื้นที่โครงการเป็น (X: 0, Z: 0) บนระนาบ Y=0 (1 หน่วย Three.js = 1 เมตรจริง)
+- แกน +X = ตะวันออก, -X = ตะวันตก, +Y = ความสูง, +Z = ใต้, -Z = เหนือ (หน้าโครงการ / ถนนใหญ่)
+- สร้างพื้นดิน (Ground Plinth), ถนนสายหลักยางมะตอย, วงเวียน, ทางเดินเท้า, และสระน้ำ/สวนหย่อม
+
+3. การสร้างอาคารและสิ่งปลูกสร้าง (Procedural Architectural Massing)
+สร้างฟังก์ชันการสร้างอาคารด้วย Three.js Code โดยแยกกลุ่มวัตถุ (THREE.Group) และรองรับโครงสร้างแบบเป็นชั้น (Floors Hierarchy):
+- Base Massing: ใช้ THREE.BoxGeometry สำหรับผนังและเสา
+- Roofs: หลังคาหน้าจั่ว (Gable Roof) ด้วย THREE.ExtrudeGeometry, หลังคาปั้นหยา (Hip Roof), และหลังคาเรียบพร้อมขอบกันตก (Flat Parapet)
+- Architectural Details: ซุ้มทางเข้า (Canopy/Portico), ทางลาดรถพยาบาล/รถเข็น (Ramp), ระเบียงยื่น (Balcony), แผงระแนงบังแดด (Louvers), บันได และกระจกหน้าต่างแนวยาว (Ribbon Windows)
+- Covered Walkways: โครงข่ายทางเดินมีหลังคาคลุมเชื่อมต่อระหว่างอาคาร พร้อมเสาค้ำคู่เป็นระยะ
+
+4. ระบบแสงเงาและบรรยากาศ (Realistic Lighting Engine)
+- Renderer Settings: PCFSoftShadowMap, ACESFilmicToneMapping, Exposure 0.90
+- Lighting Setup: THREE.DirectionalLight (แดดสี #fff4e6, Intensity 1.65, Azimuth -40°, Elevation 48° ส่องทแยงเกิดเงาทอดยาวสวยงาม), THREE.HemisphereLight (สกายบาวน์ 0.45), และ Fog เพื่อมิติความลึก
+- Day / Night Engine: กลางวันแดดสดใส / กลางคืนท้องฟ้าสีเข้ม แสงจันทร์นวล และกระจกหน้าต่าง/ป้ายไฟปรับ emissiveIntensity เรืองแสงสีทองส้ม 24 ชม.
+
+5. มุมกล้องและระบบควบคุม (Camera & Presets)
+- OrbitControls พร้อม Damping (dampingFactor: 0.08), จำกัด maxPolarAngle ป้องกันกล้องมุดลงใต้ดิน
+- Startup View: วางตำแหน่งกล้องมองเข้าหา "ด้านหน้าอาคารหลัก" (จากทิศเหนือมองลงทิศใต้) ด้วยมุมกดสถาปัตยกรรม 30°-35° ระยะกำลังพอดีเห็นซุ้มทางเข้า ทางลาด และบริบทแวดล้อม
+- ดับเบิลคลิกบนจุดใดๆ ในฉาก: กล้องจะซูมเข้าสู่จุดนั้นอย่างราบรื่น (Smooth Zoom Jump)
+- เมื่อคลิกเลือกอาคาร: ใช้ TWEEN.js เคลื่อนกล้อง Orbit เข้าไปโฟกัสด้านหน้าอาคารอย่างนุ่มนวล (Cinematic Easing)
+
+6. ส่วนติดต่อผู้ใช้และหมุด 3D (Interactive HUD & Leader Pins)
+- Dynamic 3D Pins & SVG Leader Stalks: สร้างจุด Anchor เหนือหลังคา ฉายพิกัด 3D สู่หน้าจอ 2D (project(camera)) แสดงหมุดป้ายชื่อ HTML ลอยตามอาคาร พร้อมลากเส้น SVG Curve เชื่อมจากตัวอาคารขึ้นสู่หมุดแบบเรียลไทม์
+- Modern Glassmorphism UI:
+  - Top Bar: โลโก้, ช่องค้นหาอาคาร, นาฬิกาดิจิทัล, ปุ่มปรับแสง, ปุ่มเต็มจอ
+  - Detail Slide Panel: แสดงชื่ออาคาร, แผนกบริการ, ผังจำลองแต่ละชั้น, สถิติผู้ใช้งาน, และปุ่มเปิดดูผังแยกชั้น (Exploded Floor View)
+  - Bottom Toolbar: ปุ่มรีเซ็ตภาพรวม, ปุ่มหมุน 360° (Turntable), ปุ่มเปิด-ปิดป้ายชื่อ, ปุ่มเปิด-ปิดทางเชื่อม, ปุ่มสลับโหมดกลางวัน/กลางคืน
+  - Sun & Light Popover: สไลเดอร์ปรับ Azimuth, Elevation, Sun Power, และปุ่ม Preset แสง (เช้า, เที่ยง, เย็น, ค่ำ)
+
+โปรดส่งมอบโค้ดที่สมบูรณ์ สะอาด มีคอมเมนต์อธิบาย แยกโครงสร้างอย่างเป็นระบบ พร้อมเปิดทำงานผ่านเบราว์เซอร์ได้ทันที!
+```
+</details>
+
+### 💡 ตัวอย่าง Micro-Prompts สั่งปรับแต่งเพิ่มเติม (Iterative Refinement)
+
+- **เพิ่มอาคารใหม่**:
+  ```markdown
+  ช่วยเพิ่มอาคารใหม่รหัส BLD-HEMO (ศูนย์ไตเทียม) พิกัด X=28, Z=-15 ขนาดกว้าง 18m สูง 7.5m (2 ชั้น) ลึก 24m หลังคาสีน้ำเงิน มีทางลาดชันสำหรับรถเข็นเชื่อมต่อกับถนนด้านหน้าโดยไม่ล้นทับเลนจราจร
+  ```
+- **ปรับมุมกล้องเปิดหน้าโครงการ**:
+  ```markdown
+  โปรดปรับค่าใน VIEW_PRESETS.overview ให้จุดโฟกัสตอนเปิดระบบหันหน้าเข้าหาหน้าตึกหลักจากถนนใหญ่หน้าโครงการ ด้วยมุมกด 32 องศา ระยะห่าง 75 เมตร
+  ```
+- **เชื่อมต่อ IoT / Live API**:
+  ```markdown
+  ช่วยเขียนฟังก์ชัน fetchSensorData() ดึงค่าอุณหภูมิและความชื้นมาแสดงบนป้าย 3D Pin และในการ์ดรายละเอียด หากสถานะเป็นฉุกเฉินให้เปิดไฟกะพริบสีแดงบนยอดตึก
+  ```
+
+---
+
 ## 📁 โครงสร้างโปรเจกต์ (Project Structure)
 
 ```text
